@@ -8,3 +8,6 @@
 
 # VS Code per-user (the .code-workspace file IS tracked)
 .vscode/
+
+# poteto-mode scripts install their deps in-tree (bun)
+node_modules/

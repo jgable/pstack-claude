@@ -9,7 +9,7 @@ Spawn one reviewer per configured model to adversarially review code changes. Ea
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
-**Platform note.** On Codex or another non-Claude runtime, the `subagent_type`/`model`/`readonly` dispatch fields and the `claude-*` model slugs below are Claude defaults. Resolve them via [`codex-tools.md`](../poteto-mode/references/codex-tools.md) (dispatch maps to `spawn_agent`; substitute your configured Codex models, keeping the panel model-diverse).
+**Platform note.** On Codex or another non-Claude runtime, the `subagent_type`/`model` dispatch fields and the `claude-*` model slugs below are Claude defaults. Resolve them via [`codex-tools.md`](../poteto-mode/references/codex-tools.md) (dispatch maps to `spawn_agent`; substitute your configured Codex models, keeping the panel model-diverse).
 
 ## Step 1, Determine Scope
 
@@ -34,14 +34,14 @@ Write one clear paragraph. Reviewers challenge whether the work achieves the int
 
 ## Step 3, Spawn Reviewers
 
-Launch one reviewer per model in your configured interrogate list (defaults `claude-opus-5`, `claude-fable-5`, `claude-opus-4-6`, `claude-sonnet-5`), all in a single message.
+Launch all reviewers in a single message with the `Agent` tool. Use the `interrogate reviewers` list from `~/.claude/pstack-models.md` when present, one reviewer per entry, extending or shrinking the Reviewer A/B/C/D labels to the configured entry count. With no configured line, use the defaults `claude-opus-5`, `claude-fable-5`, `claude-opus-4-6`, `claude-sonnet-5`, labeled Reviewer A through D in that order.
 
 For each reviewer:
 - `subagent_type`: `general-purpose`
-- `model`: one model from the configured interrogate list
-- `readonly`: `true`
+- `model`: the configured `interrogate reviewers` entry for that label, or that label's default above
+- Read-only posture: the dispatch prompt forbids edits, writes, and commits
 
-If a configured model slug is rejected as unresolvable when you try to spawn the subagent, check the valid slugs in the Agent tool's error message, pick the closest equivalent (prefer the highest-reasoning tier of the same family), spawn with the valid slug, and open a separate PR to update the configured defaults. Do not block the review on the slug issue.
+If a model slug is rejected as unresolvable when you try to spawn the subagent, check the valid slugs in the Agent tool's error message, pick the closest equivalent (prefer the highest-reasoning tier of the same family), spawn with the valid slug, and open a separate PR to update the configured value or the defaults above. Do not block the review on the slug issue. If the configured value is `inherit-parent` or `auto`, omit `model` instead so the reviewer runs on the parent's model. Never treat those aliases as broken slugs or enter this fallback for them.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent
@@ -89,7 +89,7 @@ Present the verdict in this structure:
 > [The stated intent paragraph from Step 2]
 
 ### Reviewers
-List each reviewer on its own line like `- <model name>: [N findings]`
+- Reviewer [label]: [model name], [N findings] (one bullet per reviewer)
 
 ### Act On
 [Findings that should be addressed. For each: description, which models raised it, why it matters.]
