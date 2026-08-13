@@ -120,7 +120,7 @@ Launch all matching investigators in a single message so they run concurrently. 
 Subagent config (each):
 - `subagent_type`: `general-purpose`
 - `model`: your configured why-investigators model (default `claude-opus-4-8`)
-- `readonly`: `false` (agent mode). **Do not use readonly/Ask mode.** It strips MCP access, which disables MCP-backed investigators entirely. The source control investigator would be safe in readonly, but keep modes uniform. Investigators still shouldn't write anything. That's a posture, not a sandbox.
+- Full tool access. **Do not pick a subagent_type that strips MCP access.** That disables MCP-backed investigators entirely. Investigators still shouldn't write anything. That's a posture, not a sandbox.
 
 Each investigator gets:
 1. The base prompt from `references/investigator-prompt.md`
@@ -166,7 +166,7 @@ Spawn one synthesizer subagent:
 
 - `subagent_type`: `general-purpose`
 - `model`: your configured why-synthesizer model (default `claude-opus-4-8`)
-- `readonly`: `false` (agent mode). The synthesizer's quality check spot-verifies citations, which can require MCP access. Readonly/Ask mode strips MCPs and defeats that.
+- Full tool access. The synthesizer's quality check spot-verifies citations, which can require MCP access, so do not pick a subagent_type that strips MCPs.
 
 The synthesizer gets:
 1. The investigator findings, including any null results and any categories skipped with justification

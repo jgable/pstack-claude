@@ -25,7 +25,7 @@ Resolve what is in scope vs explicitly out, technical or platform constraints, p
 Delegate codebase exploration (the **guard-the-context-window** principle skill).
 
 - Prefer `subagent_type: "poteto-agent"`. `general-purpose` is the fallback. Never use Claude Code's built-in `Plan` agent; it ignores this skill.
-- Pass `model:` explicitly per the configured roles (default `claude-opus-4-8` for code-writing delegations and judgment; multi-model panels run the configured quad — defaults in the panel skills, overridden via `/setup-pstack`).
+- Pass `model:` explicitly per the configured roles (default `claude-opus-4-8` for code-writing delegations and judgment; multi-model panels run the configured quad, with defaults in the panel skills, overridden via `/setup-pstack`).
 
 Each explorer returns file pointers, conventions, dependencies, test infrastructure, and entry points. No inlined dumps.
 
@@ -98,7 +98,7 @@ In the overview, name which poteto-mode non-negotiables the implementer must app
 - the **interrogate** skill for adversarial review on contested designs before shipping.
 - `/deslop` over each diff before commit. the **unslop** skill over any prose surface.
 - the **show-me-your-work** skill to keep a decision trail when the plan is large enough to need an auditable record.
-- the **babysit** skill after opening the PR.
+- the **Babysit** playbook (`../playbooks/babysit.md`) when the user asks for PR status or a green stack, and the **Shipping** playbook (`../playbooks/shipping.md`) when she asks to land it.
 
 ## 7. Hand back
 

@@ -91,15 +91,18 @@ quad_of() { { grep -oE 'claude-[a-z0-9-]+' || true; } | tr '\n' ' ' | sed 's/ $/
 canon_quad="$(grep -m1 '^arena runners:' "$setup" | quad_of || true)"
 quad_bad=""
 [ -n "$canon_quad" ] || quad_bad="could not read the canonical quad from $setup (arena runners row)"$'\n'
-# Each panel skill states the quad on its one line naming the fourth slug.
+# Each panel skill states the quad on the one line naming all four canonical
+# slugs in order. The anchor derives from the canonical quad so a model bump
+# can't strand it (the old hardcoded fourth-slug anchor went stale in 0.9.10).
+anchor_re="$(printf '%s' "$canon_quad" | sed 's/ /.*/g')"
 for name in arena architect how interrogate; do
   skill="$repo/plugins/pstack/skills/$name/SKILL.md"
-  n="$(grep -Fc 'claude-sonnet-4-6' "$skill" || true)"
+  n="$(grep -Ec "$anchor_re" "$skill" || true)"
   if [ "$n" != "1" ]; then
     quad_bad="$quad_bad$skill: expected exactly 1 default-quad line, found $n"$'\n'
     continue
   fi
-  got="$(grep -F 'claude-sonnet-4-6' "$skill" | quad_of)"
+  got="$(grep -E "$anchor_re" "$skill" | quad_of)"
   [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$skill: [$got] != [$canon_quad]"$'\n'
 done
 # The setup-pstack role rows must all carry the same quad (excludes the line 24
@@ -114,6 +117,11 @@ if [ -n "$quad_bad" ]; then
   fail=1
 else
   note "ok: default model quad identical across 4 panel skills + setup-pstack ($canon_quad)"
+fi
+
+# --static-only stops here: the invariants above need no CLI or API access.
+if [ "${1:-}" = "--static-only" ]; then
+  exit "$fail"
 fi
 
 # Behavioral checks against a minimal colliding plugin.
