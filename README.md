@@ -1,6 +1,6 @@
 # pstack for Claude Code, Codex, and Prime Agent
 
-Claude Code port of [poteto](https://x.com/poteto)'s [pstack](https://github.com/cursor/plugins/tree/main/pstack) plugin (skill tree synced against upstream `99559f2`, pstack v0.14.0; upstream reviewed through `424829e`, docs-only — see [What's deliberately not ported](#whats-deliberately-not-ported)). The same `skills/` tree also ships as a Codex plugin (see [Running on Codex](#running-on-codex)) and is discovered as-is by [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) (see [Prime Agent](#prime-agent)). Original by Lauren Tan; ships MIT. Imports seven skills from [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) (also MIT): `deslop`, `thermo-nuclear-code-quality-review`, `make-pr-easy-to-review`, `fix-ci`, `fix-merge-conflicts`, `get-pr-comments`, `what-did-i-get-done`.
+Claude Code port of [poteto](https://x.com/poteto)'s [pstack](https://github.com/cursor/plugins/tree/main/pstack) plugin (skill tree synced against upstream `7314f72`, pstack v0.14.8). The same `skills/` tree also ships as a Codex plugin (see [Running on Codex](#running-on-codex)) and is discovered as-is by [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) (see [Prime Agent](#prime-agent)). Original by Lauren Tan; ships MIT. Imports seven skills from [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) (also MIT): `deslop`, `thermo-nuclear-code-quality-review`, `make-pr-easy-to-review`, `fix-ci`, `fix-merge-conflicts`, `get-pr-comments`, `what-did-i-get-done`.
 
 > if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.
 
@@ -83,11 +83,12 @@ Unverified relative to Codex: the Codex path above is confirmed on a live sessio
 ├── plugins/pstack/                   # the plugin itself
 │   ├── .claude-plugin/plugin.json    # Claude Code manifest
 │   ├── .codex-plugin/plugin.json     # Codex manifest (skills: ./skills/)
-│   ├── skills/                       # 52 skills (shared by all three runtimes)
+│   ├── skills/                       # 53 skills (shared by all three runtimes)
 │   │   ├── poteto-mode/references/codex-tools.md  # Claude→Codex tool/model/skill map
-│   │   └── poteto-mode/scripts/      # watch-pr, orch, worktree-audit (bun; used by the 0.14 playbooks)
-│   ├── commands/                     # 31 slash command stubs (Codex-compatible; link into ~/.codex/prompts)
-│   └── agents/                       # Claude subagents: poteto-agent, comment-sicko (Codex routes via codex-tools.md)
+│   │   └── poteto-mode/scripts/      # watch-pr, orch, check-plan, worktree-audit (bun; used by the 0.14 playbooks)
+│   ├── commands/                     # 32 slash command stubs (Codex-compatible; link into ~/.codex/prompts)
+│   ├── agents/                       # Claude subagents: poteto-agent, comment-sicko (Codex routes via codex-tools.md)
+│   └── docs/guide/                   # upstream user guide, copied verbatim (Cursor-specific)
 ├── tests/skill-collision-repro.sh    # flag/version/quad invariants (--static-only needs no CLI)
 ├── tests/port-residue-lint.sh        # greps the tree for untranslated Cursor primitives
 ├── tests/upstream-coverage.sh        # checks a sync range is fully ported or deliberately skipped
@@ -105,7 +106,7 @@ Plugin-internal path references in the docs below (`skills/<name>/`, `commands/<
 The Codex build shares one `skills/` tree with the Claude Code build. Nothing is forked or generated. One mapping file does the translation. That single-mapping-file spine is the one `superpowers` ships for Codex. pstack diverges in one respect. superpowers writes its skills in tool-neutral language, so no skill names a runtime tool. pstack keeps the upstream Claude-native prose and adds a one-line Platform note to each skill that names a Claude primitive, so the port stays in lockstep with upstream sync.
 
 - **Skill invocation.** Codex loads `SKILL.md` natively. There is no `Skill` tool. You invoke a skill by name (ask for it, or pick `pstack:poteto-mode` from the list).
-- **Commands.** The 31 `commands/*.md` files are Codex-compatible as written. Codex reads their `description` frontmatter and the filename and ignores the keys it doesn't know (`name`, `disable-model-invocation`), and each body invokes its skill. They surface as slash commands when the full plugin is installed, or you can link them into `~/.codex/prompts/` for `/name` shortcuts (see [Install on Codex](#codex)). The `disable-model-invocation: true` flag exists for Claude Code, where a command and a skill sharing a name collide: the Skill tool resolved the name to the command trampoline, which told the model to invoke the skill, which resolved to the trampoline again — the skill never loaded (see CHANGES 0.9.7). With the flag, the model's Skill tool reaches only the skill; user-typed `/pstack:<name>` still runs the command. The mirror rule: a skill with a same-named command must **not** carry the flag — on a skill it makes the Skill tool refuse the invocation entirely, which broke the SessionStart mandate and every trampoline body until CHANGES 0.9.8 removed it from the 12 skills that had it. Only the command-less `principle-*` leaves keep the flag.
+- **Commands.** The 32 `commands/*.md` files are Codex-compatible as written. Codex reads their `description` frontmatter and the filename and ignores the keys it doesn't know (`name`, `disable-model-invocation`), and each body invokes its skill. They surface as slash commands when the full plugin is installed, or you can link them into `~/.codex/prompts/` for `/name` shortcuts (see [Install on Codex](#codex)). The `disable-model-invocation: true` flag exists for Claude Code, where a command and a skill sharing a name collide: the Skill tool resolved the name to the command trampoline, which told the model to invoke the skill, which resolved to the trampoline again — the skill never loaded (see CHANGES 0.9.7). With the flag, the model's Skill tool reaches only the skill; user-typed `/pstack:<name>` still runs the command. The mirror rule: a skill with a same-named command must **not** carry the flag — on a skill it makes the Skill tool refuse the invocation entirely, which broke the SessionStart mandate and every trampoline body until CHANGES 0.9.8 removed it from the 12 skills that had it. Only the command-less `principle-*` leaves keep the flag.
 - **Tool, model, and built-in mapping.** When a skill names a Claude tool (the `Agent` tool, `AskUserQuestion`), a `claude-*` model slug, or a Claude built-in skill (`run`, `verify`, `loop`, `plugin-dev:skill-development`), it resolves through [`skills/poteto-mode/references/codex-tools.md`](plugins/pstack/skills/poteto-mode/references/codex-tools.md). `poteto-mode` and every skill that names one of those carries a one-line **Platform note** pointing there.
 - **Subagents.** The `Agent` tool maps to Codex `spawn_agent` / `wait_agent` / `close_agent`, enabled by `multi_agent = true`. Parallel fan-out is multiple `spawn_agent` calls in one turn. Without the flag, `interrogate`, `arena`, `how`, `why`, `reflect`, and `architect` degrade to a single sequential pass. There is no `poteto-agent` subagent type on Codex; route ad-hoc subagents by dispatching a `spawn_agent` told to read `poteto-mode` first.
 - **Auto-fire.** The plugin ships no SessionStart hook (removed in 0.10.0). On Claude Code, add the user-level hook from [Install](#claude-code) for always-on routing; on Codex, enter `pstack:poteto-mode` by name or add a standing instruction to `~/.codex/AGENTS.md`.
@@ -160,6 +161,7 @@ No third-party plugins. The harsher-critique escape hatch lives in the bundled `
 | `/no-comments` | spawn Comment Sicko, then act on the accepted findings |
 | `/technical-writing` | apply the layered technical-writing standard to docs and prose |
 | `/bro` | restate the last message in plain language |
+| `/make-bot-ui` | build a page or dashboard whose buttons wake a Grok Bot over a webhook |
 | `/thermo-nuclear-code-quality-review` | extremely strict maintainability audit |
 | `/make-pr-easy-to-review` | clean noisy history and improve PR description before review |
 | `/fix-ci` | find failing PR checks, inspect logs, apply focused fixes |
@@ -187,6 +189,9 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 - **`skills/fix-merge-conflicts/`** — imported verbatim from `cursor-team-kit`. Pairs with `babysit` step 5.
 - **`skills/get-pr-comments/`** — imported verbatim from `cursor-team-kit`. Primitive for `babysit` step 4 and `reflect`.
 - **`skills/what-did-i-get-done/`** — imported verbatim from `cursor-team-kit`. Commit summary over a chosen period.
+- **`skills/make-bot-ui/`** — ported from upstream 0.14.4. Builds a local UI that wakes a Cursor Grok Bot over a webhook. Cursor Grok Bot sessions use `update_state` and a secret-request card; Claude Code / Codex specify the routine and take the sender key from a local file.
+
+The upstream [pstack guide](plugins/pstack/docs/guide/README.md) is copied verbatim at `plugins/pstack/docs/guide/` (Cursor-specific: sticky modes, cloud agents, the Cursor dashboard). Use it as the author's walkthrough; resolve Cursor primitives through the substitution table when running this port.
 
 ### What's substituted in skill bodies
 
@@ -197,6 +202,7 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 | Cursor's built-in `/loop` | Claude Code's built-in `loop` skill |
 | Cursor's built-in `/babysit` | `babysit` skill routing to the ported Babysit playbook (`poteto-mode/playbooks/babysit.md`) |
 | Cursor's built-in `/loop` dynamic mode | the `loop` skill with no interval (model self-paces) |
+| Cursor Grok Bot `update_state` / `SendToUser secret-request` | dual path in `make-bot-ui`: use the native cards when present; otherwise specify the routine and read the sender key from a gitignored local file |
 | `environment: "cloud"` on agent spawns | `isolation: "worktree"` locally; `isolation: "remote"` where available |
 | `is_background: true` agent frontmatter | dropped; `run_in_background: true` is the stated default per `Agent` call |
 | Cursor agent store / dashboard liveness | session scratchpad directory / background-agent completion notifications |
@@ -221,10 +227,12 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 - `run_in_background: true` on Agent calls (Claude Code supports it).
 - `/loop`, `/deslop`, `/babysit` slash references in skill bodies — they all resolve in Claude Code now.
 - The principle/playbook structure and every word of the principles themselves.
+- `docs/guide/` — upstream's ten-chapter walkthrough, copied verbatim even where it names Cursor surfaces.
 
 ### What's deliberately not ported
 
-- **`docs/guide/`** (upstream 0.12.0–0.14.0) — upstream's ten-chapter user guide with screenshots. It documents the Cursor experience (sticky modes, cloud agents, the Cursor dashboard) and duplicates what this README and CHANGES.md already cover for Claude Code. Revisit if the port grows its own guide.
+- **`assets/logo.png`** (upstream 0.14.7–0.14.8) — Cursor marketplace logo. This port has no marketplace `logo` field.
+- **`disable-model-invocation` on `how`, `why`, `unslop`, `typescript-best-practices`** (upstream 0.14.5) — on a command-paired Claude skill the flag makes the Skill tool refuse the invocation (CHANGES 0.9.8). The commands still carry it.
 - **`agents/poteto-agent.md` `is_background: true`** (upstream 0.14.0) — Claude Code agent frontmatter has no such key; the behavior is the port's stated per-call default (`run_in_background: true`).
 - **`automations/benny/`** (upstream `0452e08`, the only pstack change between `e46364b` and v0.10.0) — a dormant Slack issue-triage and reproduce-and-fix automation pack built on Cursor's event-triggered automations. It registers no slash skills even upstream, so excluding it changes nothing about the ported plugin's behavior. Porting it would mean translating Cursor's event-trigger runtime to Claude Code's polling-based scheduled agents plus Slack and tracker plumbing — speculative infrastructure with no local user. Revisit if an unattended issue-intake stream materialises; the likely first step is porting the triage skill onto a single Claude scheduled agent, not the whole pack.
 - **`cursor-team-kit` beyond the seven imported skills** — the rest either duplicate Claude Code built-ins (`verify-this` → the `verify` skill and built-in verification discipline; `check-compiler-errors` → LSP diagnostics; `control-cli`/`control-ui` → `run`/`verify`, already the substitution targets) or overlap skills this port ships (`loop-on-ci`, `review-and-ship`, `weekly-review` vs `babysit`, `fix-ci`, `make-pr-easy-to-review`, `what-did-i-get-done`). `pr-review-canvas` is Cursor-UI-specific.

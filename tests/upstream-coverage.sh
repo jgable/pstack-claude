@@ -12,9 +12,9 @@ repo="$(cd "$(dirname "$0")/.." && pwd)"
 fail=0
 
 # Deliberately not ported (recorded in CHANGES.md): the Cursor manifest, the
-# upstream README (frozen copy lives at README-UPSTREAM.md), the docs/ guide,
-# and the benny automations.
-skip_re='^pstack/(\.cursor-plugin/|README\.md|docs/|automations/)'
+# upstream README (frozen copy lives at README-UPSTREAM.md), the marketplace
+# logo, and the benny automations. docs/guide is ported verbatim.
+skip_re='^pstack/(\.cursor-plugin/|README\.md|assets/|automations/)'
 
 while IFS=$'\t' read -r status path; do
   case "$status" in D*) continue ;; esac

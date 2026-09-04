@@ -2,6 +2,22 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## 0.10.1 — sync to upstream v0.14.8
+
+Catches the port up with upstream `cursor/plugins/pstack` from `99559f2` (v0.14.0) to `7314f72` (v0.14.8). Skill count 52 → 53, commands 31 → 32. Model-slug churn (Grok 4.5→4.6, Fable 5.1 panel defaults) is not imported; the port keeps its Claude workhorse and panel quad.
+
+**New skill.** `make-bot-ui` (+ command): build a page whose buttons wake a Cursor Grok Bot over a webhook, including the sender-key handoff and Tailscale. Directory-aligned `name: make-bot-ui`; no skill-side `disable-model-invocation` (command-paired). Cursor Grok Bot sessions still call `update_state` and `SendToUser secret-request`. Claude Code and Codex cannot: they specify the routine for the user to create in Grok Bot, take the webhook URL in chat, and read the sender key from a gitignored local file. The POST contract, Tailscale bind, and wake-handling rules are unchanged. The wake itself still runs in the Grok Bot.
+
+**Multi-PR plan rewrite (0.14.3).** `multi-phase-plan.md` is no longer a pointer at `references/plan.md`; that file is deleted. The playbook is now a machine-checked skeleton (program checklist, per-PR verification, live/perf/review gates). `scripts/check-plan.mjs` is ported with the swarm-worker slug substituted to `claude-opus-4-8`. Recurring translations: agent store → session scratchpad; `control-ui`/`control-cli` → `verify`/`run`; cloud VMs → worktrees (`isolation: "worktree"`, remote where available); `/loop` → the `loop` skill; `/goal` kept in the skeleton (the checker looks for it) with a Claude Code note to pin the same text as the first todolist item.
+
+**PR workflow (0.14.2, 0.14.6).** `opening-a-pr.md` gains Conventional Commits titles, a Why/Scope/Tradeoffs/Blast Radius/Verification description template, forge resolution (`gh` default, Origin when it can resolve the repo, never require Graphite), and ready-never-draft. `babysit`, `shipping`, `autopilot-full`, and `autopilot-stack` overlay the same forge-neutral rules on the port's existing Claude translations (worktrees, driver skills, `loop` skill, never message an idle agent). Shipping no longer arms Graphite merge-when-ready; it lands one PR at a time through the resolved forge.
+
+**TypeScript (0.14.6).** New "Schemas before guards" row and `patterns.md` example (`z.infer` / the repo's schema library). Branded-types and boundary-validation wording now parse at the boundary into a named domain type.
+
+**Docs.** `docs/guide/` (ten chapters plus images) is copied verbatim, Cursor-specific on purpose. `README-UPSTREAM.md` refreshed to the v0.14.8 upstream README.
+
+**Deliberately not ported.** Marketplace logo (`assets/logo.png`, 0.14.7–0.14.8). Upstream `disable-model-invocation` on `how`, `why`, `unslop`, and `typescript-best-practices` (0.14.5) — that flag on a command-paired Claude skill makes the Skill tool refuse the invocation (0.9.8). Benny, sticky-mode frontmatter, and `is_background` remain out.
+
 ## 0.10.0 — sync to upstream v0.14.0
 
 Catches the port up with upstream `cursor/plugins/pstack` from `3fe2823` (v0.11.3) through v0.12.0, v0.13.0 (#185), and v0.14.0 (#187, `99559f2`). The one upstream commit after the sync point (`424829e`) is docs-only and was reviewed, nothing to port. Skill count 48 → 52, commands 27 → 31, agents 1 → 2. Sync coverage and residue are now machine-checked (see Tests below).
@@ -174,6 +190,7 @@ Upstream pstack jumped from `0.1.0` → `0.9.2` between syncs. 30+ commits, incl
 | Cursor `/loop` (built-in) | Claude Code `loop` skill | 1:1 replacement; available as a built-in skill. |
 | Cursor `/babysit` (built-in) | This plugin's `babysit` skill → the ported Babysit playbook | Since 0.10.0 the skill is a thin router into `skills/poteto-mode/playbooks/babysit.md` (upstream's own 0.14 protocol). |
 | Cursor `/loop` dynamic mode | The `loop` skill with no interval | Model self-paces the wakeups. |
+| Cursor Grok Bot `update_state` / `SendToUser secret-request` | Dual path in `make-bot-ui` | Use the native cards when the session has them; otherwise specify the routine and read the sender key from a gitignored local file. |
 | `environment: "cloud"` on agent spawns | `isolation: "worktree"` + `run_in_background: true`; `isolation: "remote"` where available | Claude Code splits parallelism from file isolation; remote is availability-gated. |
 | `cloud_base_branch` | Check the branch out in the parent before spawning | Worktrees branch from the parent's HEAD. |
 | `is_background: true` agent frontmatter | (dropped) | No such frontmatter key; `run_in_background: true` is the stated per-call default. |
