@@ -70,7 +70,7 @@ cd pstack-claude
 for s in plugins/pstack/skills/*/; do ln -s "$PWD/$s" ~/.agents/skills/"$(basename "$s")"; done
 ```
 
-pstack's `SKILL.md` frontmatter is a subset of what Prime reads: it requires `name` (lowercase, matching the parent directory — every pstack skill already conforms) and `description`, honours `disable-model-invocation`, and ignores unknown keys such as pstack's `user-invocable`. `curl -fsSL https://app.primeintellect.ai/prime-agent/install.sh | sh` installs Prime itself; `--no-skills` disables discovery, and explicit `--skill <path>` still loads. Prime is model-agnostic, so running these skills against **ChatGPT / OpenAI models is a Prime backend setting, not a plugin change** — keep the multi-model panels in `arena`, `interrogate`, `architect`, and `how` genuinely diverse across whatever models you configure (see the OpenAI panel note under [Running on Codex](#running-on-codex)).
+pstack's `SKILL.md` frontmatter is a subset of what Prime reads: it requires `name` (lowercase, matching the parent directory — every pstack skill already conforms) and `description`, honours `disable-model-invocation`, and ignores unknown keys such as pstack's `user-invocable`. `curl -fsSL https://app.primeintellect.ai/prime-agent/install.sh | sh` installs Prime itself; `--no-skills` disables discovery, and explicit `--skill <path>` still loads. Prime is model-agnostic, so running these skills against **ChatGPT / OpenAI models is a Prime backend setting, not a plugin change** — keep the multi-model panels in `arena`, `interrogate`, and `architect` genuinely diverse across whatever models you configure (see the OpenAI panel note under [Running on Codex](#running-on-codex)).
 
 Unverified relative to Codex: the Codex path above is confirmed on a live session; the Prime path is derived from Prime's documented discovery paths and frontmatter schema, not yet run on a live Prime session. The plugin ships no auto-fire hook, so enter `pstack:poteto-mode` by name or add a standing routing instruction to your Prime config. Teardown is `rm ~/.agents/skills/<name>`.
 
@@ -183,12 +183,13 @@ The port is editorial, not mechanical. Anywhere upstream pstack assumed Cursor-s
 
 - **`skills/babysit/`** — the `/babysit` entry point. Originally an independently authored analog of Cursor's closed-source built-in; since the v0.14.0 sync it is a thin router into the ported upstream protocol at `skills/poteto-mode/playbooks/babysit.md` (upstream published its real babysit playbook in 0.14, so the blind analog retired rather than compete with it).
 - **`skills/deslop/`** — imported verbatim from `cursor-team-kit`. Cleans AI tells out of diffs before commit.
-- **`skills/thermo-nuclear-code-quality-review/`** — imported verbatim from `cursor-team-kit`. Used as the harsher-critique escape hatch in `arena`, `interrogate`, `architect`, and `how` (replaces the Cursor-original cross-vendor bridge).
+- **`skills/thermo-nuclear-code-quality-review/`** — imported verbatim from `cursor-team-kit`. Originally the harsher-critique escape hatch for the panel skills; since the v0.15.13 sync only `poteto-help` names it.
 - **`skills/make-pr-easy-to-review/`** — imported verbatim from `cursor-team-kit`. Composes with `opening-a-pr` and `babysit`.
 - **`skills/fix-ci/`** — imported verbatim from `cursor-team-kit`. Narrower CI-fix primitive that `babysit` can route to.
 - **`skills/fix-merge-conflicts/`** — imported verbatim from `cursor-team-kit`. Pairs with `babysit` step 5.
 - **`skills/get-pr-comments/`** — imported verbatim from `cursor-team-kit`. Primitive for `babysit` step 4 and `reflect`.
 - **`skills/what-did-i-get-done/`** — imported verbatim from `cursor-team-kit`. Commit summary over a chosen period.
+- **`skills/benchmark-checklist/`**, **`skills/correct/`**, **`skills/poteto-help/`** — ported from upstream 0.15.x. `poteto-help` is the user guide; its Cursor surfaces (install, sticky modes, cloud agents, Plan Mode, the model sheet) are translated to this port's equivalents.
 - **`skills/make-bot-ui/`** — ported from upstream 0.14.4. Builds a local UI that wakes a Cursor Grok Bot over a webhook. Cursor Grok Bot sessions use `update_state` and a secret-request card; Claude Code / Codex specify the routine and take the sender key from a local file.
 
 The upstream [pstack guide](plugins/pstack/docs/guide/README.md) is copied verbatim at `plugins/pstack/docs/guide/` (Cursor-specific: sticky modes, cloud agents, the Cursor dashboard). Use it as the author's walkthrough; resolve Cursor primitives through the substitution table when running this port.
@@ -215,11 +216,11 @@ The upstream [pstack guide](plugins/pstack/docs/guide/README.md) is copied verba
 | Model `composer-2.5-fast` (Cursor) | `claude-sonnet-4-6` |
 | Model `claude-opus-4-X-thinking-xhigh` (Cursor UI variant) | `claude-opus-4-8` (extended thinking configured separately) |
 | Models `gpt-5.3-codex-high-fast`, `gpt-5.5-high-fast` (via Cursor) | `claude-sonnet-4-6`, `claude-haiku-4-5` (Claude family) |
-| Multi-model panels (arena, architect, interrogate, how-critics) | Default quad is `claude-opus-5` + `claude-fable-5` + `claude-opus-4-6` + `claude-sonnet-5` — four distinct models across tiers and generations (replaces the cross-vendor diversity lost in translation and restores upstream's four-way split). |
+| Multi-model panels (arena, architect, interrogate) | Default quad is `claude-opus-5` + `claude-fable-5` + `claude-opus-4-6` + `claude-sonnet-5` — four distinct models across tiers and generations (replaces the cross-vendor diversity lost in translation and restores upstream's four-way split). |
 
 ### What's lost in translation
 
-**Cross-vendor model diversity.** `arena`, `interrogate`, `architect`, and `how` all rely on stress-testing a design against four *different* model families. Claude Code is single-vendor, so the four-way split collapses to four Claude variants by tier and thinking budget. Instead of bridging to an external CLI for that diversity, the rewiring routes the "harsher pass" to the bundled `thermo-nuclear-code-quality-review` skill — different style of pressure (strict maintainability rubric), not vendor diversity, but it lives in-plugin with no extra installs.
+**Cross-vendor model diversity.** `arena`, `interrogate`, and `architect` all rely on stress-testing a design against four *different* model families. Claude Code is single-vendor, so the four-way split collapses to four Claude variants by tier and thinking budget. Instead of bridging to an external CLI for that diversity, the rewiring routes the "harsher pass" to the bundled `thermo-nuclear-code-quality-review` skill — different style of pressure (strict maintainability rubric), not vendor diversity, but it lives in-plugin with no extra installs.
 
 ### What's deliberately kept
 
@@ -231,6 +232,9 @@ The upstream [pstack guide](plugins/pstack/docs/guide/README.md) is copied verba
 
 ### What's deliberately not ported
 
+- **`how` Critique mode** (removed upstream in 0.15.x) — followed; the `how critics` role row is retired and `setup-pstack` drops it from an existing sheet.
+- **`setup-pstack` reasoning budget** (upstream 0.15.x) — rewrites the effort token of Cursor slugs; Claude slugs have none.
+- **`hardest tasks` sheet row** — the port never carried it; the hardest changes default to `claude-fable-5` in prose.
 - **`assets/logo.png`** (upstream 0.14.7–0.14.8) — Cursor marketplace logo. This port has no marketplace `logo` field.
 - **`disable-model-invocation` on `how`, `why`, `unslop`, `typescript-best-practices`** (upstream 0.14.5) — on a command-paired Claude skill the flag makes the Skill tool refuse the invocation (CHANGES 0.9.8). The commands still carry it.
 - **`agents/poteto-agent.md` `is_background: true`** (upstream 0.14.0) — Claude Code agent frontmatter has no such key; the behavior is the port's stated per-call default (`run_in_background: true`).

@@ -81,7 +81,7 @@ else
 fi
 
 # Static invariant (CHANGES maintenance note): the default model quad is duplicated
-# verbatim across the four panel skills and the setup-pstack sheet, "kept grep-identical
+# verbatim across the three panel skills and the setup-pstack sheet, "kept grep-identical
 # when models change." Derive the canonical ordered quad from setup-pstack's arena-runners
 # row and assert every other copy matches, so a partial model bump fails here instead of
 # drifting silently. (This copy in the test is the assertion anchor; a single generated
@@ -95,7 +95,7 @@ quad_bad=""
 # slugs in order. The anchor derives from the canonical quad so a model bump
 # can't strand it (the old hardcoded fourth-slug anchor went stale in 0.9.10).
 anchor_re="$(printf '%s' "$canon_quad" | sed 's/ /.*/g')"
-for name in arena architect how interrogate; do
+for name in arena architect interrogate; do
   skill="$repo/plugins/pstack/skills/$name/SKILL.md"
   n="$(grep -Ec "$anchor_re" "$skill" || true)"
   if [ "$n" != "1" ]; then
@@ -110,13 +110,13 @@ done
 while IFS= read -r line; do
   got="$(printf '%s\n' "$line" | quad_of)"
   [ "$got" = "$canon_quad" ] || quad_bad="$quad_bad$setup role row: [$got] != [$canon_quad]"$'\n'
-done < <(grep -E '^(arena runners|architect runners|interrogate reviewers|how critics):' "$setup")
+done < <(grep -E '^(arena runners|architect runners|interrogate reviewers):' "$setup")
 if [ -n "$quad_bad" ]; then
   note "FAIL: the default model quad is not identical across the panel skills and setup-pstack:"
   note "$quad_bad"
   fail=1
 else
-  note "ok: default model quad identical across 4 panel skills + setup-pstack ($canon_quad)"
+  note "ok: default model quad identical across 3 panel skills + setup-pstack ($canon_quad)"
 fi
 
 # --static-only stops here: the invariants above need no CLI or API access.

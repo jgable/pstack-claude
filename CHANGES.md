@@ -2,6 +2,27 @@
 
 This port applies the Cursor → Claude Code substitutions in skill bodies. Earlier drafts left them flagged; this revision resolves them. A later pass added a Codex build that shares the same skills; see [Codex port](#codex-port) below.
 
+## 0.11.0 — sync to upstream v0.15.13
+
+Catches the port up with upstream `cursor/plugins/pstack` from `7314f72` (v0.14.8) to `e5a8186` (v0.15.13). Skill count 53 → 59, commands 32 → 35. Model-slug churn (Opus 5.5 / Grok 4.7 defaults, the three-model cross-vendor panels) is not imported; the port keeps its `claude-opus-4-8` workhorse and the panel quad. This is the first sync run through the repo-local `sync-upstream` skill.
+
+**New skills.**
+
+- `benchmark-checklist` (+ command): vet a perf measurement before reporting it. Verbatim; names no Cursor primitive.
+- `correct` (+ command): turn repeated operator corrections into repo changes that make each mistake impossible. Verbatim.
+- `poteto-help` (+ command, with `references/{prompting,recipes}.md`): the user guide skill. Typed-only like upstream. The body translates every Cursor surface it names: install via `/plugin marketplace add` + `/plugin install`, the model sheet at `~/.claude/pstack-models.md`, no sticky mode (type `/poteto-mode` per task or use the README's SessionStart recipe), Cursor Plan Mode → Claude Code plan mode, cloud agents → background subagents in worktrees, `/create-skill` → `plugin-dev:skill-development`, and the bundled `deslop` / `babysit` / cursor-team-kit imports in its "not in pstack" list. Links to the Cursor skills docs are dropped rather than guessed.
+- `principle-attack-the-premise`, `principle-explain-the-number`, `principle-test-behavior-not-implementation`: leaves, `user-invocable: false` per the 0.9.9 convention, wired into the poteto-mode Principles index and the `perf-issue` playbook exactly where upstream wires them.
+
+**`how` loses Critique mode.** Upstream deleted `references/critic-prompt.md` and `critique-rubric.md` and the whole critique flow. Followed: the skill is rewritten to upstream's explain-only structure, the `how critics` role row is gone from `setup-pstack` (whose step 2 now drops retired role lines on re-run), `codex-tools.md` and poteto-mode's panel list no longer name it, and `tests/skill-collision-repro.sh` checks the quad across three panel skills instead of four. A user sheet that still carries `how critics:` is harmless; `setup-pstack` drops it on the next run.
+
+**Model sheet preamble.** Upstream now has every routed skill read its role line the same way ("set `model` to that line's value, or the default; leave it unset for `auto` / `inherit-parent`; on a rejected slug fall back to the default, then the closest valid slug of the same family"). Adopted in `how`, `why`, `reflect`, `arena`, `architect`, `interrogate`, and `swarm`, pointed at `~/.claude/pstack-models.md` and the `Agent` tool. Upstream's rejected-slug families (`claude-*` / `gpt-*` / `grok-*`) become Opus / Fable / Sonnet by name so the quad line stays parseable by the test.
+
+**Content refinements merged over the port's translations.** Upstream's semicolon-to-period and filler-trim pass across every skill and leaf. `poteto-mode`: fresh subagents by default, every claim carries its evidence or a label, full-autonomy-grant rules on the AskUserQuestion trigger, cite only principles whose leaf you read. `architect`: an agent-contributor red-flag screen and four new red flags (split ownership, two ways, importable internals, hand-synced list). `swarm`: briefs name exact SHAs and method, aggregate respawns results that lack them. `show-me-your-work`: `start` rows and append-only self-audit; `log.sh` appends the header on an empty file. `perf-issue`: seven performance mantras replace the strategy families, step 1 runs `benchmark-checklist`. `why`: large trim, output format lives in `synthesizer-prompt.md`. `autopilot-full` / `autopilot-stack` / `multi-phase-plan`: owners push after every verifiable unit, rebase only at merge prep, hourly tick via `/loop 1h` (kept literal, the checker requires it, glossed as the `loop` skill at a one-hour interval), `/goal` arming removed upstream and so the port's `/goal` note from 0.10.1 is gone too. `opening-a-pr`: the Why / What changed / Scope / Tradeoffs / Blast Radius / Verification body with attachment rules, and autopilot owners babysit their own PRs. `check-plan.mjs` is now byte-identical to upstream (its lane check is a regex, so the port's slug substitution is no longer needed); verified on the ported skeleton: 1 problem with the placeholder, 0 once the model is filled in.
+
+**Deliberately not ported.** The `setup-pstack` reasoning-budget step (rewrites the effort token of Cursor slugs; Claude slugs have none and the `Agent` tool has no effort knob). The `hardest tasks` sheet row (the port never carried it; hardest changes still default to `claude-fable-5` in prose). Upstream's "built-in PR tool" paragraphs in `opening-a-pr` and the plan skeleton (the port is forge-neutral through `gh` / Origin). Upstream's deletion of swarm step 5's worktree sentence (cloud workers each get a VM; local workers share a filesystem, so the port keeps it). The three-model panel shrink. `docs/guide/` is refreshed verbatim as before.
+
+**Tests.** `tests/skill-collision-repro.sh --static-only`, `tests/port-residue-lint.sh`, and `tests/upstream-coverage.sh <clone> 7314f72 e5a8186` all pass.
+
 ## 0.10.1 — sync to upstream v0.14.8
 
 Catches the port up with upstream `cursor/plugins/pstack` from `99559f2` (v0.14.0) to `7314f72` (v0.14.8). Skill count 52 → 53, commands 31 → 32. Model-slug churn (Grok 4.5→4.6, Fable 5.1 panel defaults) is not imported; the port keeps its Claude workhorse and panel quad.
@@ -203,6 +224,14 @@ Upstream pstack jumped from `0.1.0` → `0.9.2` between syncs. 30+ commits, incl
 | `~/.cursor/projects/*/` transcripts | `~/.claude/projects/<encoded-cwd>/*.jsonl` | `<encoded-cwd>` is the workspace's working directory with `/` → `-`. |
 | Cursor `agent-transcripts/` dir | `~/.claude/projects/<encoded-cwd>/` | Same as above. |
 | `.cursor/skills/`, `~/.cursor/skills/`, `~/.cursor/plugins/` | `.claude/skills/`, `~/.claude/skills/`, `~/.claude/plugins/` | Path-only translation. |
+| Cursor "built-in PR tool" | (dropped) | PR operations go through the resolved forge: `gh` by default, Origin when it resolves the repo. |
+| Cursor Custom Mode / sticky mode (Option+Enter, "Use as Mode") | (none) | Type `/poteto-mode` per task, or use the README's user-level SessionStart recipe. |
+| `/add-plugin pstack`, Customize sidebar | `/plugin marketplace add michael-denyer/pstack-claude` + `/plugin install pstack@pstack-claude` | Install surface. |
+| `~/.cursor/rules/pstack-models.mdc` | `~/.claude/pstack-models.md` | Loaded through an `@` include in `~/.claude/CLAUDE.md`. |
+| `setup-pstack` reasoning budget (effort-token rewrite) | (not ported) | Claude slugs carry no effort token; extended thinking is a separate knob. |
+| Cursor Plan Mode | Claude Code plan mode | Name only. |
+| `/loop 1h` | The `loop` skill at a one-hour interval | Text stays literal where `check-plan.mjs` requires it. |
+| Rejected-slug families `claude-*` / `gpt-*` / `grok-*` | Opus / Fable / Sonnet by name | Keeps the quad line parseable by `skill-collision-repro.sh`. |
 | Cursor `mcps/` directory | Tool list at top of system prompt (`mcp__<server>__<name>` prefixed entries), or `.mcp.json`, or `claude mcp list` | Discovery surface differs. |
 | Model: `composer-2.5-fast` | `claude-sonnet-4-6` | Fast workhorse Claude. |
 | Model: `claude-opus-4-X-thinking-xhigh` | `claude-opus-4-8` (with note "extended thinking" where it appeared in a table) | Claude Code uses model IDs without the Cursor UI suffix; extended thinking is a separate knob. Originally substituted to `4-7`, then bumped to `4-8` to match the current Claude family. |
